@@ -129,3 +129,52 @@ def test_command_line(tmp_path):
     assert code == 0 and (tmp_path / "price.studio.json").exists()
     code, out, err = run_cli(os.path.join(DATA, "legacy", "studio2ga4gh-0.3_ga4gh.json"), "-o", str(tmp_path / "x.json"))
     assert code == 2 and "upgrade" in err
+
+
+def test_an_existing_drawing_is_never_replaced_unasked(tmp_path):
+    """The default output, okafor.studio.json for okafor_ga4gh-pedigree.json, may be the drawing the file was
+    made from, with names and notes the GA4GH files do not hold: it is replaced only with --force."""
+    def copy(name):
+        path = tmp_path / name
+        path.write_text(open(os.path.join(DATA, name), encoding="utf-8").read(), encoding="utf-8")
+        return path
+    src, family = copy("okafor_ga4gh-pedigree.json"), copy("okafor_phenopackets-family.json")
+    drawing = tmp_path / "okafor.studio.json"
+    original = '{"persons": [], "note": "the drawing the GA4GH files came from"}\n'
+    drawing.write_text(original, encoding="utf-8")
+    for args in ([str(src)], ["-g", str(src)], ["-p", str(family)]):
+        code, out, err = run_cli(*args)
+        assert code == 2, args
+        assert "okafor.studio.json already exists" in err and "-o" in err and "--force" in err
+        assert drawing.read_text(encoding="utf-8") == original
+    # --force replaces it
+    code, out, err = run_cli(str(src), "--force")
+    assert code == 0, err
+    assert json.loads(drawing.read_text(encoding="utf-8"))["persons"]
+    # a file named with -o is replaced, since it was asked for by name
+    other = tmp_path / "other.studio.json"
+    other.write_text(original, encoding="utf-8")
+    code, out, err = run_cli(str(src), "-o", str(other))
+    assert code == 0, err
+    assert json.loads(other.read_text(encoding="utf-8"))["persons"]
+    # but never the file being read, even with --force
+    before = src.read_text(encoding="utf-8"), family.read_text(encoding="utf-8")
+    for args in ([str(src), "-o", str(src)], [str(src), "-o", str(src), "--force"],
+                 ["-g", str(src), "-p", str(family), "-o", str(family)]):
+        code, out, err = run_cli(*args)
+        assert code == 2 and "is the file being read" in err, args
+    assert (src.read_text(encoding="utf-8"), family.read_text(encoding="utf-8")) == before
+    # a missing input is reported as missing
+    code, out, err = run_cli(str(tmp_path / "missing_ga4gh-pedigree.json"))
+    assert code == 1 and "cannot find" in err
+
+
+def test_the_help_explains_the_output():
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        try:
+            main(["--help"])
+        except SystemExit:
+            pass
+    text = " ".join(buf.getvalue().split())
+    assert "--force" in text and "replace the default output file if it already exists" in text

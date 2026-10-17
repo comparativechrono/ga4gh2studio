@@ -22,7 +22,11 @@ GA4GH implementation shared by the lab's pedigree tools, and depends on it.
   the form of the draft of version 1 of the standard are refused with a
   message saying what they are.
 - The command takes the file as its argument (`ga4gh2studio FILE`) and writes
-  `<name>.studio.json` by default; `-g` and `-p` still work.
+  `<name>.studio.json` by default; `-g` and `-p` still work. As that is often
+  the name of the drawing the file was made from, an existing file of that
+  name is not replaced: the command stops with exit code 2 and says to choose
+  another name with `-o` or to replace it with the new `--force`. A file named
+  with `-o` is replaced, but never the file being read.
 - `ga4gh2studio_standalone.py` is removed: it was version 0.1.0, read only
   the old form, and could not work without pedigree-ga4gh.
 - `__version__` now matches the release (0.3.0 reported 0.1.0), and there are

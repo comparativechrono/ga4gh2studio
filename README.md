@@ -31,6 +31,14 @@ Give either file. A GA4GH Pedigree holds everything a Family does, and more
 (adoptions, donors, partners), so if you have both, give the Pedigree. The
 `-g FILE` and `-p FILE` options of version 0.3 still work.
 
+Without `-o`, the drawing is written beside the file, named after it:
+`okafor.studio.json` for `okafor_ga4gh-pedigree.json`. That is often the name
+of the drawing the GA4GH files were made from, which holds names and notes
+that they do not, so ga4gh2studio never replaces a file of that name unasked.
+If one exists, it stops (with exit code 2) and says so: choose another name
+with `-o`, or give `--force` to replace it. A file you name with `-o` is
+replaced if it exists, but never the file being read.
+
 Open the result in Pedigree Studio and press **Tidy**: ga4gh2studio lays the
 family out simply, and Tidy arranges it properly.
 
