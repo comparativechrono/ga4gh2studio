@@ -1,0 +1,482 @@
+{
+  "id": "FAM1",
+  "narrative": "Pedigree drawn in Pedigree Studio: 16 people; proband III-2. Conditions: breast cancer, ovarian cancer, prostate cancer.",
+  "date": "2026-10-17",
+  "indexPatients": [
+    "III-2"
+  ],
+  "individuals": [
+    {
+      "id": "FAM1-I-1",
+      "subject": {
+        "id": "I-1",
+        "vitalStatus": {
+          "status": "DECEASED"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-I-2",
+      "subject": {
+        "id": "I-2",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-I-3",
+      "subject": {
+        "id": "I-3",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "diseases": [
+        {
+          "term": {
+            "id": "MONDO:0008315",
+            "label": "prostate cancer"
+          }
+        }
+      ],
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "resources": [
+          {
+            "id": "mondo",
+            "name": "Mondo Disease Ontology",
+            "url": "http://purl.obolibrary.org/obo/mondo.obo",
+            "version": "2026-10-06",
+            "namespacePrefix": "MONDO",
+            "iriPrefix": "http://purl.obolibrary.org/obo/MONDO_"
+          }
+        ],
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-I-4",
+      "subject": {
+        "id": "I-4",
+        "vitalStatus": {
+          "status": "DECEASED"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-1",
+      "subject": {
+        "id": "II-1",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-2",
+      "subject": {
+        "id": "II-2",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-3",
+      "subject": {
+        "id": "II-3",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-4",
+      "subject": {
+        "id": "II-4",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "diseases": [
+        {
+          "term": {
+            "id": "MONDO:0007254",
+            "label": "breast cancer"
+          }
+        }
+      ],
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "resources": [
+          {
+            "id": "mondo",
+            "name": "Mondo Disease Ontology",
+            "url": "http://purl.obolibrary.org/obo/mondo.obo",
+            "version": "2026-10-06",
+            "namespacePrefix": "MONDO",
+            "iriPrefix": "http://purl.obolibrary.org/obo/MONDO_"
+          }
+        ],
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-5",
+      "subject": {
+        "id": "II-5",
+        "vitalStatus": {
+          "status": "DECEASED"
+        },
+        "sex": "FEMALE"
+      },
+      "diseases": [
+        {
+          "term": {
+            "id": "MONDO:0008170",
+            "label": "ovarian cancer"
+          }
+        }
+      ],
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "resources": [
+          {
+            "id": "mondo",
+            "name": "Mondo Disease Ontology",
+            "url": "http://purl.obolibrary.org/obo/mondo.obo",
+            "version": "2026-10-06",
+            "namespacePrefix": "MONDO",
+            "iriPrefix": "http://purl.obolibrary.org/obo/MONDO_"
+          }
+        ],
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-6",
+      "subject": {
+        "id": "II-6",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-7",
+      "subject": {
+        "id": "II-7",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-1",
+      "subject": {
+        "id": "III-1",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-2",
+      "subject": {
+        "id": "III-2",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-3",
+      "subject": {
+        "id": "III-3",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-4",
+      "subject": {
+        "id": "III-4",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-5",
+      "subject": {
+        "id": "III-5",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "individualId": "I-1",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "II-1"
+    },
+    {
+      "individualId": "I-2",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "II-1"
+    },
+    {
+      "individualId": "I-1",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "II-3"
+    },
+    {
+      "individualId": "I-2",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "II-3"
+    },
+    {
+      "individualId": "I-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "II-4"
+    },
+    {
+      "individualId": "I-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "II-4"
+    },
+    {
+      "individualId": "I-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "II-5"
+    },
+    {
+      "individualId": "I-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "II-5"
+    },
+    {
+      "individualId": "I-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "II-6"
+    },
+    {
+      "individualId": "I-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "II-6"
+    },
+    {
+      "individualId": "II-2",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "III-1"
+    },
+    {
+      "individualId": "II-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "III-1"
+    },
+    {
+      "individualId": "II-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "III-2"
+    },
+    {
+      "individualId": "II-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "III-2"
+    },
+    {
+      "individualId": "II-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "III-3"
+    },
+    {
+      "individualId": "II-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "III-3"
+    },
+    {
+      "individualId": "II-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "III-4"
+    },
+    {
+      "individualId": "II-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "III-4"
+    },
+    {
+      "individualId": "II-3",
+      "relation": {
+        "id": "KIN:050",
+        "label": "isSeparatedPartnerOf"
+      },
+      "relativeId": "II-4"
+    },
+    {
+      "individualId": "II-6",
+      "relation": {
+        "id": "KIN:022",
+        "label": "isAdoptiveParentOf"
+      },
+      "relativeId": "III-5"
+    },
+    {
+      "individualId": "II-7",
+      "relation": {
+        "id": "KIN:022",
+        "label": "isAdoptiveParentOf"
+      },
+      "relativeId": "III-5"
+    },
+    {
+      "individualId": "III-3",
+      "relation": {
+        "id": "KIN:010",
+        "label": "isMonozygoticMultipleBirthSiblingOf"
+      },
+      "relativeId": "III-4"
+    }
+  ]
+}

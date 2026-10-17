@@ -1,0 +1,373 @@
+{
+  "id": "FAM1",
+  "narrative": "Pedigree drawn in Pedigree Studio: 14 people; proband IV-2. Conditions: cystic fibrosis. III-1 is a carrier. V-1 is a pregnancy.",
+  "date": "2026-10-17",
+  "indexPatients": [
+    "IV-2"
+  ],
+  "individuals": [
+    {
+      "id": "FAM1-I-1",
+      "subject": {
+        "id": "I-1",
+        "vitalStatus": {
+          "status": "DECEASED"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-I-2",
+      "subject": {
+        "id": "I-2",
+        "vitalStatus": {
+          "status": "DECEASED"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-1",
+      "subject": {
+        "id": "II-1",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-2",
+      "subject": {
+        "id": "II-2",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-3",
+      "subject": {
+        "id": "II-3",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-4",
+      "subject": {
+        "id": "II-4",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-1",
+      "subject": {
+        "id": "III-1",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-2",
+      "subject": {
+        "id": "III-2",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-3",
+      "subject": {
+        "id": "III-3",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-III-4",
+      "subject": {
+        "id": "III-4",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-IV-1",
+      "subject": {
+        "id": "IV-1",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-IV-2",
+      "subject": {
+        "id": "IV-2",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-IV-3",
+      "subject": {
+        "id": "IV-3",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "diseases": [
+        {
+          "term": {
+            "id": "MONDO:0009061",
+            "label": "cystic fibrosis"
+          }
+        }
+      ],
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "resources": [
+          {
+            "id": "mondo",
+            "name": "Mondo Disease Ontology",
+            "url": "http://purl.obolibrary.org/obo/mondo.obo",
+            "version": "2026-10-06",
+            "namespacePrefix": "MONDO",
+            "iriPrefix": "http://purl.obolibrary.org/obo/MONDO_"
+          }
+        ],
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-V-1",
+      "subject": {
+        "id": "V-1",
+        "sex": "UNKNOWN_SEX"
+      },
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "phenopacketSchemaVersion": "2.0"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "individualId": "I-1",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "II-2"
+    },
+    {
+      "individualId": "I-2",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "II-2"
+    },
+    {
+      "individualId": "I-1",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "II-3"
+    },
+    {
+      "individualId": "I-2",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "II-3"
+    },
+    {
+      "individualId": "II-1",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "III-1"
+    },
+    {
+      "individualId": "II-2",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "III-1"
+    },
+    {
+      "individualId": "II-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "III-3"
+    },
+    {
+      "individualId": "II-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "III-3"
+    },
+    {
+      "individualId": "III-1",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "IV-1"
+    },
+    {
+      "individualId": "III-2",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "IV-1"
+    },
+    {
+      "individualId": "III-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "IV-2"
+    },
+    {
+      "individualId": "III-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "IV-2"
+    },
+    {
+      "individualId": "III-3",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "IV-3"
+    },
+    {
+      "individualId": "III-4",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "IV-3"
+    },
+    {
+      "individualId": "IV-1",
+      "relation": {
+        "id": "KIN:027",
+        "label": "isBiologicalMotherOf"
+      },
+      "relativeId": "V-1"
+    },
+    {
+      "individualId": "IV-2",
+      "relation": {
+        "id": "KIN:028",
+        "label": "isBiologicalFatherOf"
+      },
+      "relativeId": "V-1"
+    },
+    {
+      "individualId": "IV-1",
+      "relation": {
+        "id": "KIN:030",
+        "label": "isConsanguineousPartnerOf"
+      },
+      "relativeId": "IV-2"
+    }
+  ]
+}

@@ -1,0 +1,267 @@
+{
+  "id": "FAM1",
+  "proband": {
+    "id": "FAM1-III-2",
+    "subject": {
+      "id": "III-2",
+      "vitalStatus": {
+        "status": "ALIVE"
+      },
+      "sex": "FEMALE"
+    },
+    "metaData": {
+      "created": "2026-10-17T12:00:00Z",
+      "createdBy": "studio2ga4gh 0.4.0",
+      "phenopacketSchemaVersion": "2.0"
+    }
+  },
+  "relatives": [
+    {
+      "id": "FAM1-I-3",
+      "subject": {
+        "id": "I-3",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "MALE"
+      },
+      "diseases": [
+        {
+          "term": {
+            "id": "MONDO:0008315",
+            "label": "prostate cancer"
+          }
+        }
+      ],
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "resources": [
+          {
+            "id": "mondo",
+            "name": "Mondo Disease Ontology",
+            "url": "http://purl.obolibrary.org/obo/mondo.obo",
+            "version": "2026-10-06",
+            "namespacePrefix": "MONDO",
+            "iriPrefix": "http://purl.obolibrary.org/obo/MONDO_"
+          }
+        ],
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-4",
+      "subject": {
+        "id": "II-4",
+        "vitalStatus": {
+          "status": "ALIVE"
+        },
+        "sex": "FEMALE"
+      },
+      "diseases": [
+        {
+          "term": {
+            "id": "MONDO:0007254",
+            "label": "breast cancer"
+          }
+        }
+      ],
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "resources": [
+          {
+            "id": "mondo",
+            "name": "Mondo Disease Ontology",
+            "url": "http://purl.obolibrary.org/obo/mondo.obo",
+            "version": "2026-10-06",
+            "namespacePrefix": "MONDO",
+            "iriPrefix": "http://purl.obolibrary.org/obo/MONDO_"
+          }
+        ],
+        "phenopacketSchemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "FAM1-II-5",
+      "subject": {
+        "id": "II-5",
+        "vitalStatus": {
+          "status": "DECEASED"
+        },
+        "sex": "FEMALE"
+      },
+      "diseases": [
+        {
+          "term": {
+            "id": "MONDO:0008170",
+            "label": "ovarian cancer"
+          }
+        }
+      ],
+      "metaData": {
+        "created": "2026-10-17T12:00:00Z",
+        "createdBy": "studio2ga4gh 0.4.0",
+        "resources": [
+          {
+            "id": "mondo",
+            "name": "Mondo Disease Ontology",
+            "url": "http://purl.obolibrary.org/obo/mondo.obo",
+            "version": "2026-10-06",
+            "namespacePrefix": "MONDO",
+            "iriPrefix": "http://purl.obolibrary.org/obo/MONDO_"
+          }
+        ],
+        "phenopacketSchemaVersion": "2.0"
+      }
+    }
+  ],
+  "consanguinousParents": false,
+  "pedigree": {
+    "persons": [
+      {
+        "familyId": "FAM1",
+        "individualId": "I-1",
+        "paternalId": "0",
+        "maternalId": "0",
+        "sex": "MALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "I-2",
+        "paternalId": "0",
+        "maternalId": "0",
+        "sex": "FEMALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "I-3",
+        "paternalId": "0",
+        "maternalId": "0",
+        "sex": "MALE",
+        "affectedStatus": "AFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "I-4",
+        "paternalId": "0",
+        "maternalId": "0",
+        "sex": "FEMALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "II-1",
+        "paternalId": "I-1",
+        "maternalId": "I-2",
+        "sex": "MALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "II-2",
+        "paternalId": "0",
+        "maternalId": "0",
+        "sex": "FEMALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "II-3",
+        "paternalId": "I-1",
+        "maternalId": "I-2",
+        "sex": "MALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "II-4",
+        "paternalId": "I-3",
+        "maternalId": "I-4",
+        "sex": "FEMALE",
+        "affectedStatus": "AFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "II-5",
+        "paternalId": "I-3",
+        "maternalId": "I-4",
+        "sex": "FEMALE",
+        "affectedStatus": "AFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "II-6",
+        "paternalId": "I-3",
+        "maternalId": "I-4",
+        "sex": "MALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "II-7",
+        "paternalId": "0",
+        "maternalId": "0",
+        "sex": "FEMALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "III-1",
+        "paternalId": "II-3",
+        "maternalId": "II-2",
+        "sex": "MALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "III-2",
+        "paternalId": "II-3",
+        "maternalId": "II-4",
+        "sex": "FEMALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "III-3",
+        "paternalId": "II-3",
+        "maternalId": "II-4",
+        "sex": "MALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "III-4",
+        "paternalId": "II-3",
+        "maternalId": "II-4",
+        "sex": "MALE",
+        "affectedStatus": "UNAFFECTED"
+      },
+      {
+        "familyId": "FAM1",
+        "individualId": "III-5",
+        "paternalId": "0",
+        "maternalId": "0",
+        "sex": "FEMALE",
+        "affectedStatus": "UNAFFECTED"
+      }
+    ]
+  },
+  "metaData": {
+    "created": "2026-10-17T12:00:00Z",
+    "createdBy": "studio2ga4gh 0.4.0",
+    "resources": [
+      {
+        "id": "mondo",
+        "name": "Mondo Disease Ontology",
+        "url": "http://purl.obolibrary.org/obo/mondo.obo",
+        "version": "2026-10-06",
+        "namespacePrefix": "MONDO",
+        "iriPrefix": "http://purl.obolibrary.org/obo/MONDO_"
+      }
+    ],
+    "phenopacketSchemaVersion": "2.0"
+  }
+}
