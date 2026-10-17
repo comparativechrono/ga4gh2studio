@@ -86,54 +86,87 @@ class TwinPair:
 def parse_ga4gh(data: dict) -> tuple[dict[str, Individual], list[TwinPair]]:
     """Parse a GA4GH Pedigree Standard JSON.
 
-    Extracts individuals from the individuals array and derives parent-child
-    and twin relationships from the relationships array using KIN ontology codes.
+    Handles two known JSON layouts:
+    - Format A (our studio2ga4gh output): id, sex, name, deceased, affected
+      directly on the individual object. Relationships use 'individual'/'relative'.
+      Proband in 'indexPatients' (camelCase).
+    - Format B (Phenopackets-style): individual has outer 'id' + 'subject' wrapper
+      containing sex, name, vital_status, diseases. Relationships use
+      'individual_id'/'relative_id' (snake_case). Proband in 'index_patients'.
 
-    Returns (individuals dict, twin pairs list).
+    Returns (individuals dict keyed by subject ID, twin pairs list).
     """
     inds: dict[str, Individual] = {}
     twins: list[TwinPair] = []
 
-    # Parse individuals
+    # Parse individuals — detect format from first individual
     for ind_data in data.get("individuals", []):
-        iid = ind_data.get("id", "")
+        has_subject = "subject" in ind_data and isinstance(ind_data["subject"], dict)
+
+        if has_subject:
+            # Format B: data nested under 'subject'
+            subject = ind_data["subject"]
+            iid = subject.get("id", ind_data.get("id", ""))
+            sex_str = subject.get("sex", "UNKNOWN_SEX")
+            name = subject.get("name", "")
+            vital = subject.get("vital_status", {})
+            deceased = vital.get("status", "").upper() == "DECEASED"
+            # Diseases may be on subject
+            diseases = []
+            for d in subject.get("diseases", []):
+                label = d.get("term", {}).get("label", "")
+                if label:
+                    diseases.append(label)
+            for pf in subject.get("phenotypicFeatures", []):
+                label = pf.get("type", {}).get("label", "")
+                if label:
+                    diseases.append(label)
+            affected = len(diseases) > 0
+        else:
+            # Format A: data directly on the individual
+            iid = ind_data.get("id", "")
+            sex_str = ind_data.get("sex", "UNKNOWN_SEX")
+            name = ind_data.get("name", "")
+            deceased = ind_data.get("deceased", False)
+            affected = ind_data.get("affected", False)
+            diseases = []
+
         if not iid:
             continue
-        sex_str = ind_data.get("sex", "UNKNOWN_SEX")
+
         inds[iid] = Individual(
             id=iid,
             sex=SEX_GA4GH_TO_CODE.get(sex_str, 0),
-            name=ind_data.get("name", ""),
-            date_of_birth=ind_data.get("dateOfBirth", ""),
-            deceased=ind_data.get("deceased", False),
-            affected=ind_data.get("affected", False),
+            name=name,
+            date_of_birth=ind_data.get("dateOfBirth", "") or ind_data.get("date_of_birth", ""),
+            deceased=deceased,
+            affected=affected,
             proband=False,
+            diseases=diseases,
         )
 
-    # Mark probands from indexPatients
-    for pid in data.get("indexPatients", []):
+    # Mark probands — handle both camelCase and snake_case
+    index_patients = data.get("indexPatients", data.get("index_patients", []))
+    for pid in index_patients:
         if pid in inds:
             inds[pid].proband = True
 
-    # Parse relationships
+    # Parse relationships — handle both key naming conventions
     for rel in data.get("relationships", []):
-        subject = rel.get("individual", "")
-        obj = rel.get("relative", "")
+        subject = rel.get("individual", rel.get("individual_id", ""))
+        obj = rel.get("relative", rel.get("relative_id", ""))
         kin_id = rel.get("relation", {}).get("id", "")
 
         if not subject or not obj:
             continue
 
         if kin_id in KIN_MOTHER:
-            # subject isBiologicalMotherOf obj → obj's mother is subject
             if obj in inds:
                 inds[obj].mother_id = subject
         elif kin_id in KIN_FATHER:
-            # subject isBiologicalFatherOf obj → obj's father is subject
             if obj in inds:
                 inds[obj].father_id = subject
         elif kin_id in KIN_ADOPTIVE:
-            # subject isAdoptiveParentOf obj
             if obj in inds:
                 parent = inds.get(subject)
                 if parent:
@@ -183,7 +216,7 @@ def parse_phenopackets(data: dict) -> tuple[dict[str, Individual], list[str]]:
             affected=(status == "AFFECTED"),
         )
 
-    # Extract diseases from proband
+    # Extract diseases and phenotypic features from proband
     proband = data.get("proband", {})
     proband_id = proband.get("subject", {}).get("id", "")
     if proband_id and proband_id in inds:
@@ -191,6 +224,7 @@ def parse_phenopackets(data: dict) -> tuple[dict[str, Individual], list[str]]:
         vs = proband.get("subject", {}).get("vitalStatus", {})
         if vs.get("status") == "DECEASED":
             inds[proband_id].deceased = True
+        # Collect from diseases (term.label) and phenotypicFeatures (type.label)
         for disease in proband.get("diseases", []):
             label = disease.get("term", {}).get("label", "")
             if label and label not in seen_diseases:
@@ -198,8 +232,15 @@ def parse_phenopackets(data: dict) -> tuple[dict[str, Individual], list[str]]:
                 disease_names.append(label)
             if label and proband_id in inds:
                 inds[proband_id].diseases.append(label)
+        for feature in proband.get("phenotypicFeatures", []):
+            label = feature.get("type", {}).get("label", "")
+            if label and label not in seen_diseases:
+                seen_diseases.add(label)
+                disease_names.append(label)
+            if label and proband_id in inds:
+                inds[proband_id].diseases.append(label)
 
-    # Extract diseases from relatives
+    # Extract diseases and phenotypic features from relatives
     for rel in data.get("relatives", []):
         rel_id = rel.get("subject", {}).get("id", "")
         if rel_id and rel_id in inds:
@@ -208,6 +249,13 @@ def parse_phenopackets(data: dict) -> tuple[dict[str, Individual], list[str]]:
                 inds[rel_id].deceased = True
             for disease in rel.get("diseases", []):
                 label = disease.get("term", {}).get("label", "")
+                if label and label not in seen_diseases:
+                    seen_diseases.add(label)
+                    disease_names.append(label)
+                if label:
+                    inds[rel_id].diseases.append(label)
+            for feature in rel.get("phenotypicFeatures", []):
+                label = feature.get("type", {}).get("label", "")
                 if label and label not in seen_diseases:
                     seen_diseases.add(label)
                     disease_names.append(label)
