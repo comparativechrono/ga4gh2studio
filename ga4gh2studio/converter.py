@@ -1,23 +1,41 @@
-"""
-ga4gh2studio - Convert GA4GH Pedigree and Phenopackets to Pedigree Studio sessions.
+"""Convert GA4GH files to a Pedigree Studio drawing.
 
-Accepts GA4GH Pedigree JSON, Phenopackets Family JSON, or both.
-When both are provided, GA4GH is used for structure (relationships, twins,
-adoption) and Phenopackets enriches with disease labels.
-"""
+Reads a GA4GH Pedigree (Phenopackets form) or a Phenopackets Family through
+pedigree-ga4gh, the one GA4GH implementation that the lab's pedigree tools
+share, and draws it as a Pedigree Studio session. The layout here is a simple
+one: Tidy in Pedigree Studio arranges the drawing properly (the Pedigree
+workbench runs it as soon as the drawing opens).
 
+How relationships are drawn:
+
+* biological, sperm-donor and ovum-donor parents: a couple with a solid line
+  to the child (donors get a D in their symbol);
+* a gestational carrier with no genetic mother recorded: drawn in the mother's
+  place with an S in her symbol;
+* adoptive parents: a dashed line, and the child's symbol in brackets;
+* twins: identical (KIN:010) or non-identical (KIN:009, KIN:011);
+* partners, consanguineous and separated partners: the matching partnership line.
+
+A child with only one parent recorded gets an "unknown parent" partner so the
+Studio can draw the line of descent. Relations the Studio cannot draw directly
+(cousins, grandparents and so on, without the people in between) are listed in
+the warnings.
+
+Files written by studio2ga4gh 0.3 or abusua2ga4gh 0.2 must be upgraded first
+(``pedigree-ga4gh upgrade``), so that only one form of GA4GH is ever read.
+"""
 from __future__ import annotations
 
 import json
-import os
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Dict, List, Optional, Tuple
 
-__version__ = "0.1.0"
+from pedigree_ga4gh import Kindred, from_document, identify_legacy, kin
+from pedigree_ga4gh.io import loads
 
-# ── Pedigree Studio layout constants ──────────────────────────────────────
+# Pedigree Studio layout constants
 SHAPE_SIZE = 52
 SHAPE_HALF = 26
 PARTNER_GAP = SHAPE_SIZE * 2
@@ -26,44 +44,43 @@ CHILD_SPACING = 104
 MIN_BLOCK_GAP = 60
 STROKE_COLOR = "#1a2332"
 
-# Colour palette for disease phenotypes
-DISEASE_PALETTE = [
-    '#c0392b', '#2980b9', '#27ae60', '#e67e22',
-    '#8e44ad', '#f1c40f', '#16a085', '#d35400', '#7f8c8d',
-]
+# Colours for conditions, in order
+DISEASE_PALETTE = ["#c0392b", "#2980b9", "#27ae60", "#e67e22", "#8e44ad", "#f1c40f", "#16a085", "#d35400",
+                   "#7f8c8d"]
 
-# ── KIN code mapping ──────────────────────────────────────────────────────
-# Maps KIN IDs to semantic meaning
-KIN_MOTHER = {"KIN:027"}       # isBiologicalMotherOf
-KIN_FATHER = {"KIN:028"}       # isBiologicalFatherOf
-KIN_ADOPTIVE = {"KIN:022"}     # isAdoptiveParentOf
-KIN_MONO_TWIN = {"KIN:010"}    # isMonozygoticMultipleBirthSiblingOf
-KIN_DI_TWIN = {"KIN:011"}      # isDizygoticMultipleBirthSiblingOf
+SEX_TO_CODE = {"MALE": 1, "FEMALE": 2}
+CODE_TO_SHAPE = {1: "male", 2: "female", 0: "unknown"}
 
-SEX_GA4GH_TO_CODE = {"MALE": 1, "FEMALE": 2, "UNKNOWN_SEX": 0, "OTHER_SEX": 0}
-SEX_CODE_TO_SHAPE = {1: "male", 2: "female", 0: "unknown"}
+_ADOPTIVE = {kin.ADOPTIVE_PARENT, kin.FOSTER_PARENT}
+_PARTNER = {kin.PARTNER: "normal", kin.CONSANGUINEOUS_PARTNER: "consanguineous",
+            kin.SEPARATED_PARTNER: "separated", kin.SEPARATED_CONSANGUINEOUS_PARTNER: "consanguineous-separated"}
+_TWINS = {kin.MONOZYGOTIC_MULTIPLE_BIRTH_SIBLING: "identical",
+          kin.POLYZYGOTIC_MULTIPLE_BIRTH_SIBLING: "nonidentical",
+          kin.MULTIPLE_BIRTH_SIBLING: "nonidentical"}
+_DRAWN = ({kin.BIOLOGICAL_MOTHER, kin.BIOLOGICAL_FATHER, kin.BIOLOGICAL_PARENT, kin.SPERM_DONOR,
+           kin.OVUM_DONOR, kin.SURROGATE_OVUM_DONOR, kin.GESTATIONAL_CARRIER} | _ADOPTIVE | set(_PARTNER)
+          | set(_TWINS))
 
-
-# ── Internal data models ─────────────────────────────────────────────────
 
 @dataclass
 class Individual:
     id: str
-    sex: int                         # 1=male, 2=female, 0=unknown
-    name: str = ""
-    date_of_birth: str = ""
+    sex: int                         # 1 male, 2 female, 0 unknown
     deceased: bool = False
-    affected: bool = False
     proband: bool = False
-    diseases: list[str] = field(default_factory=list)  # disease label strings
+    diseases: List[str] = field(default_factory=list)   # condition labels
     father_id: Optional[str] = None
     mother_id: Optional[str] = None
+    adoptive: Tuple[Optional[str], Optional[str]] = (None, None)   # adoptive father, mother
     is_adopted: bool = False
+    centre: str = ""                 # "D", "S", "dot", "line", "P"
+    loss: bool = False
+    placeholder: bool = False
     generation: int = -1
     x: float = 0.0
     y: float = 0.0
-    partners: list[str] = field(default_factory=list)
-    mating_units: list[str] = field(default_factory=list)
+    partners: List[str] = field(default_factory=list)
+    mating_units: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -71,198 +88,10 @@ class MatingUnit:
     key: str
     father_id: str
     mother_id: str
-    child_ids: list[str] = field(default_factory=list)
+    child_ids: List[str] = field(default_factory=list)
 
 
-@dataclass
-class TwinPair:
-    child1_id: str
-    child2_id: str
-    type: str  # 'identical' or 'non-identical'
-
-
-# ── GA4GH Pedigree parser ────────────────────────────────────────────────
-
-def parse_ga4gh(data: dict) -> tuple[dict[str, Individual], list[TwinPair]]:
-    """Parse a GA4GH Pedigree Standard JSON.
-
-    Extracts individuals from the individuals array and derives parent-child
-    and twin relationships from the relationships array using KIN ontology codes.
-
-    Returns (individuals dict, twin pairs list).
-    """
-    inds: dict[str, Individual] = {}
-    twins: list[TwinPair] = []
-
-    # Parse individuals
-    for ind_data in data.get("individuals", []):
-        iid = ind_data.get("id", "")
-        if not iid:
-            continue
-        sex_str = ind_data.get("sex", "UNKNOWN_SEX")
-        inds[iid] = Individual(
-            id=iid,
-            sex=SEX_GA4GH_TO_CODE.get(sex_str, 0),
-            name=ind_data.get("name", ""),
-            date_of_birth=ind_data.get("dateOfBirth", ""),
-            deceased=ind_data.get("deceased", False),
-            affected=ind_data.get("affected", False),
-            proband=False,
-        )
-
-    # Mark probands from indexPatients
-    for pid in data.get("indexPatients", []):
-        if pid in inds:
-            inds[pid].proband = True
-
-    # Parse relationships
-    for rel in data.get("relationships", []):
-        subject = rel.get("individual", "")
-        obj = rel.get("relative", "")
-        kin_id = rel.get("relation", {}).get("id", "")
-
-        if not subject or not obj:
-            continue
-
-        if kin_id in KIN_MOTHER:
-            # subject isBiologicalMotherOf obj → obj's mother is subject
-            if obj in inds:
-                inds[obj].mother_id = subject
-        elif kin_id in KIN_FATHER:
-            # subject isBiologicalFatherOf obj → obj's father is subject
-            if obj in inds:
-                inds[obj].father_id = subject
-        elif kin_id in KIN_ADOPTIVE:
-            # subject isAdoptiveParentOf obj
-            if obj in inds:
-                parent = inds.get(subject)
-                if parent:
-                    if parent.sex == 2:
-                        inds[obj].mother_id = subject
-                    else:
-                        inds[obj].father_id = subject
-                    inds[obj].is_adopted = True
-        elif kin_id in KIN_MONO_TWIN:
-            twins.append(TwinPair(child1_id=subject, child2_id=obj, type="identical"))
-        elif kin_id in KIN_DI_TWIN:
-            twins.append(TwinPair(child1_id=subject, child2_id=obj, type="non-identical"))
-
-    return inds, twins
-
-
-# ── Phenopackets parser ───────────────────────────────────────────────────
-
-def parse_phenopackets(data: dict) -> tuple[dict[str, Individual], list[str]]:
-    """Parse a Phenopackets Family JSON.
-
-    Extracts individuals from the pedigree block and disease labels from
-    proband and relative Phenopackets.
-
-    Returns (individuals dict, disease names list).
-    """
-    inds: dict[str, Individual] = {}
-    disease_names: list[str] = []
-    seen_diseases: set[str] = set()
-
-    # Parse pedigree block
-    pedigree = data.get("pedigree", {})
-    for person in pedigree.get("persons", []):
-        iid = person.get("individualId", "")
-        if not iid:
-            continue
-        sex_str = person.get("sex", "UNKNOWN_SEX")
-        father = person.get("paternalId", "0")
-        mother = person.get("maternalId", "0")
-        status = person.get("affectedStatus", "MISSING")
-
-        inds[iid] = Individual(
-            id=iid,
-            sex=SEX_GA4GH_TO_CODE.get(sex_str, 0),
-            father_id=father if father != "0" else None,
-            mother_id=mother if mother != "0" else None,
-            affected=(status == "AFFECTED"),
-        )
-
-    # Extract diseases from proband
-    proband = data.get("proband", {})
-    proband_id = proband.get("subject", {}).get("id", "")
-    if proband_id and proband_id in inds:
-        inds[proband_id].proband = True
-        vs = proband.get("subject", {}).get("vitalStatus", {})
-        if vs.get("status") == "DECEASED":
-            inds[proband_id].deceased = True
-        for disease in proband.get("diseases", []):
-            label = disease.get("term", {}).get("label", "")
-            if label and label not in seen_diseases:
-                seen_diseases.add(label)
-                disease_names.append(label)
-            if label and proband_id in inds:
-                inds[proband_id].diseases.append(label)
-
-    # Extract diseases from relatives
-    for rel in data.get("relatives", []):
-        rel_id = rel.get("subject", {}).get("id", "")
-        if rel_id and rel_id in inds:
-            vs = rel.get("subject", {}).get("vitalStatus", {})
-            if vs.get("status") == "DECEASED":
-                inds[rel_id].deceased = True
-            for disease in rel.get("diseases", []):
-                label = disease.get("term", {}).get("label", "")
-                if label and label not in seen_diseases:
-                    seen_diseases.add(label)
-                    disease_names.append(label)
-                if label:
-                    inds[rel_id].diseases.append(label)
-
-    # Consanguinity flag
-    # (stored on result but not on individuals — used when building session)
-
-    return inds, disease_names
-
-
-# ── Merge GA4GH + Phenopackets ────────────────────────────────────────────
-
-def merge_inputs(
-    ga4gh_inds: Optional[dict[str, Individual]],
-    ga4gh_twins: Optional[list[TwinPair]],
-    pp_inds: Optional[dict[str, Individual]],
-    pp_diseases: Optional[list[str]],
-) -> tuple[dict[str, Individual], list[TwinPair], list[str]]:
-    """Merge GA4GH and Phenopackets inputs into a single individual set.
-
-    GA4GH is primary for structure (parent-child, twins, adoption).
-    Phenopackets enriches with disease labels and vital status.
-    """
-    if ga4gh_inds and pp_inds:
-        # GA4GH is the structural source
-        inds = ga4gh_inds
-        twins = ga4gh_twins or []
-        diseases = pp_diseases or []
-
-        # Enrich from Phenopackets
-        for iid, pp_ind in pp_inds.items():
-            if iid in inds:
-                if pp_ind.diseases:
-                    inds[iid].diseases = pp_ind.diseases
-                if pp_ind.deceased:
-                    inds[iid].deceased = True
-                if pp_ind.proband:
-                    inds[iid].proband = True
-            # Don't add individuals only in Phenopackets — GA4GH is authoritative
-
-        return inds, twins, diseases
-
-    elif ga4gh_inds:
-        return ga4gh_inds, ga4gh_twins or [], []
-
-    elif pp_inds:
-        return pp_inds, [], pp_diseases or []
-
-    else:
-        return {}, [], []
-
-
-# ── Graph analysis (from ped2studio) ──────────────────────────────────────
+# -- Layout (from ped2studio and ga4gh2studio 0.3) ----------------------------------
 
 def build_mating_units(inds: dict[str, Individual]) -> dict[str, MatingUnit]:
     units: dict[str, MatingUnit] = {}
@@ -353,7 +182,7 @@ def get_mating_unit_for_child(units, child_id):
     return None
 
 
-# ── Layout engine (from ped2studio) ───────────────────────────────────────
+
 
 def compute_layout(inds, units, num_gens):
     gen_members = defaultdict(list)
@@ -501,242 +330,286 @@ def compute_layout(inds, units, num_gens):
                 ind.x += shift
 
 
-# ── Session builder ───────────────────────────────────────────────────────
 
-def build_session(
-    inds: dict[str, Individual],
-    units: dict[str, MatingUnit],
-    twins: list[TwinPair],
-    diseases: list[str],
-    consanguineous_flag: bool = False,
-) -> dict:
-    """Build a Pedigree Studio v4 session dict."""
+
+# -- GA4GH -> drawing ----------------------------------------------------------------
+
+_NOTE_PATTERNS = [
+    (re.compile(r"(\S+) is a pregnancy loss"), "loss"),
+    (re.compile(r"(\S+) is a presymptomatic carrier"), "line"),
+    (re.compile(r"(\S+) is a carrier"), "dot"),
+    (re.compile(r"(\S+) is a pregnancy(?! loss)"), "P"),
+]
+_COUPLE_NOTE = re.compile(r"(\S+) and (\S+): (no children|infertility)")
+
+
+def _notes(narrative: str):
+    """Marks that studio2ga4gh records in the narrative, so that a round trip keeps them."""
+    marks, couples = {}, []
+    text = narrative or ""
+    for pattern, mark in _NOTE_PATTERNS:
+        for m in pattern.finditer(text):
+            marks.setdefault(m.group(1), mark)
+    for m in _COUPLE_NOTE.finditer(text):
+        couples.append((m.group(1), m.group(2), m.group(3)))
+    return marks, couples
+
+
+def key_label(term) -> str:
+    """The colour-key text for a condition: its label, then its ontology id in brackets,
+    which studio2ga4gh reads back so that a round trip keeps the term."""
+    if term.matched:
+        return "{} [{}]".format(term.label or term.id, term.id)
+    return term.label or term.id
+
+
+def kindred_to_individuals(k: Kindred, warnings: List[str]):
+    """The people to draw, with the parents to draw each one from."""
+    inds: Dict[str, Individual] = {}
+    marks, couple_notes = _notes(k.narrative or "")
+    for m in k.members:
+        ind = Individual(id=m.id, sex=SEX_TO_CODE.get(m.sex, 0),
+                         deceased=(m.vital_status == "DECEASED"), proband=m.index,
+                         diseases=[key_label(t) for t in m.terms if not t.excluded])
+        mark = marks.get(m.id)
+        if mark == "loss":
+            ind.loss = True
+            ind.deceased = False
+        elif mark:
+            ind.centre = mark
+        if m.affected and not ind.diseases:
+            ind.diseases = ["Affected"]
+        inds[m.id] = ind
+    skipped = defaultdict(int)
+    for r in k.relations:
+        if r.kin not in _DRAWN:
+            skipped[kin.TERMS[r.kin].label if r.kin in kin.TERMS else r.kin] += 1
+    for label, n in skipped.items():
+        warnings.append("{} '{}' relationship{} cannot be drawn directly and {} left out".format(
+            n, label, "" if n == 1 else "s", "was" if n == 1 else "were"))
+    for m in k.members:
+        child = inds[m.id]
+        father, mother, notes = k.genetic_parents(m.id)
+        for rel in k.relations_to(m.id):
+            parent = inds.get(rel.individual)
+            if parent is None:
+                continue
+            if rel.kin in (kin.SPERM_DONOR, kin.OVUM_DONOR, kin.SURROGATE_OVUM_DONOR):
+                parent.centre = parent.centre or ("S" if rel.kin == kin.SURROGATE_OVUM_DONOR else "D")
+            if rel.kin == kin.GESTATIONAL_CARRIER:
+                if not mother:
+                    mother = rel.individual
+                    parent.centre = "S"
+                else:
+                    warnings.append("{} carried {} for {}; a drawing has room for one mother, so the "
+                                    "gestational carrier is not linked".format(rel.individual, m.id, mother))
+        child.father_id, child.mother_id = father, mother
+        adoptive = [r.individual for r in k.relations_to(m.id) if r.kin in _ADOPTIVE and r.individual in inds]
+        if adoptive:
+            child.is_adopted = True
+            af = next((a for a in adoptive if inds[a].sex == 1), None)
+            am = next((a for a in adoptive if a != af and inds[a].sex != 1), None)
+            if af is None and len(adoptive) > 1:
+                af = next(a for a in adoptive if a != am)
+            child.adoptive = (af, am)
+    return inds, couple_notes
+
+
+def _placeholders(inds: Dict[str, Individual], warnings: List[str]) -> None:
+    """Give children with one recorded parent an unknown partner for that parent."""
+    extra: Dict[str, Individual] = {}
+    for ind in list(inds.values()):
+        for attr in ("bio", "adoptive"):
+            if attr == "bio":
+                f, m = ind.father_id, ind.mother_id
+            else:
+                f, m = ind.adoptive
+            if bool(f) == bool(m):
+                continue
+            known = f or m
+            key = "{}-partner".format(known) if attr == "bio" else "{}-adoptive-partner".format(known)
+            if key not in extra:
+                extra[key] = Individual(id=key, sex=0, placeholder=True)
+                warnings.append("added an unknown partner for {} so the Studio can draw the line to {}".format(
+                    known, ind.id))
+            if attr == "bio":
+                if f:
+                    ind.mother_id = key
+                else:
+                    ind.father_id = key
+            else:
+                ind.adoptive = (f, key) if f else (key, m)
+    inds.update(extra)
+
+
+def build_session(inds: Dict[str, Individual], couple_notes, partner_rels, twins, conditions) -> dict:
     persons, partnerships, child_links, twin_links = [], [], [], []
-    legend_labels = {}
-
-    # Assign colours to diseases
-    disease_colors = {}
-    for i, d in enumerate(diseases):
-        disease_colors[d] = DISEASE_PALETTE[i % len(DISEASE_PALETTE)]
-
-    # ID map (ga4gh IDs may not match person-N pattern)
-    pid_counter = 0
-    id_map = {}
-    for ind in inds.values():
-        pid_counter += 1
-        id_map[ind.id] = f"person-{pid_counter}"
-
-    for ind in inds.values():
-        ps_id = id_map[ind.id]
-        shape = SEX_CODE_TO_SHAPE.get(ind.sex, "unknown")
-
-        # Annotation text
-        text_parts = []
-        if ind.name:
-            text_parts.append(ind.name)
-        elif ind.id:
-            text_parts.append(ind.id)
-        if ind.date_of_birth:
-            text_parts.append(f"b. {ind.date_of_birth}")
-        text = "\n".join(text_parts)
-
-        # Fill based on diseases
-        fill_mode = "none"
-        fill_color = STROKE_COLOR
-        halves = [None, None]
-        quarters = [None, None, None, None]
-
-        if len(ind.diseases) >= 4:
-            fill_mode = "quartered"
-            for qi in range(min(4, len(ind.diseases))):
-                quarters[qi] = disease_colors.get(ind.diseases[qi], STROKE_COLOR)
-        elif len(ind.diseases) >= 2:
-            fill_mode = "quartered"
-            for qi, d in enumerate(ind.diseases[:4]):
-                quarters[qi] = disease_colors.get(d, STROKE_COLOR)
-        elif len(ind.diseases) == 1:
-            fill_mode = "solid"
-            fill_color = disease_colors.get(ind.diseases[0], STROKE_COLOR)
-        elif ind.affected and not diseases:
-            # Affected but no disease labels — use default
-            fill_mode = "solid"
-            fill_color = STROKE_COLOR
-
-        persons.append({
-            "id": ps_id, "shape": shape,
-            "x": round(ind.x, 1), "y": round(ind.y, 1),
+    colours = {c: DISEASE_PALETTE[i % len(DISEASE_PALETTE)] for i, c in enumerate(conditions)}
+    ps_id = {iid: "person-{}".format(i + 1) for i, iid in enumerate(inds)}
+    for iid, ind in inds.items():
+        shape = CODE_TO_SHAPE.get(ind.sex, "unknown")
+        if ind.loss:
+            shape = "miscarriage"
+        elif ind.is_adopted:
+            shape = "adopted-" + shape
+        cols = [colours[d] for d in ind.diseases if d in colours]
+        fill = {"fillMode": "none", "fillColor": STROKE_COLOR, "quarters": [None] * 4, "halves": [None, None]}
+        if len(cols) == 1:
+            fill.update(fillMode="solid", fillColor=cols[0])
+        elif len(cols) == 2:
+            fill.update(fillMode="half", halves=cols[:2])
+        elif len(cols) > 2:
+            fill.update(fillMode="quartered", quarters=(cols + [None] * 4)[:4])
+        text = "" if (ind.placeholder or re.fullmatch(r"[IVXL]+-\d+", iid)) else iid
+        if ind.placeholder:
+            text = "unknown parent"
+        persons.append(dict({
+            "id": ps_id[iid], "shape": shape, "x": round(ind.x, 1), "y": round(ind.y, 1),
             "text": text, "deceased": ind.deceased, "proband": ind.proband,
-            "fillMode": fill_mode, "fillColor": fill_color,
-            "quarters": quarters, "halves": halves,
             "shadingPattern": "stripes", "shadingCoverage": "full",
-            "centerText": "", "miscarriageSex": "unknown",
-            "noSnap": False, "siblingFixed": False, "customLabel": "Lbl",
-        })
+            "centerText": ind.centre if ind.centre in ("D", "S", "dot", "line", "P") else "",
+            "miscarriageSex": {1: "male", 2: "female"}.get(ind.sex, "unknown") if ind.loss else "unknown",
+            "noSnap": False, "siblingFixed": False, "customLabel": "Lbl"}, **fill))
+    n = 0
+    pship: Dict[Tuple[str, str], str] = {}
 
-    # Partnerships
-    pship_counter = 0
-    pship_id_map = {}
-    for mk, mu in units.items():
-        if mu.father_id in id_map and mu.mother_id in id_map:
-            pship_counter += 1
-            ps_id = f"pship-{pship_counter}"
-            pship_id_map[mk] = ps_id
-            ptype = "consanguineous" if is_consanguineous(inds, mu.father_id, mu.mother_id) else "normal"
-            partnerships.append({
-                "id": ps_id,
-                "fromId": id_map[mu.father_id],
-                "toId": id_map[mu.mother_id],
-                "type": ptype,
-            })
+    def couple(a, b, typ="normal"):
+        nonlocal n
+        key = tuple(sorted((a, b)))
+        if key in pship:
+            return pship[key]
+        n += 1
+        pid = "pship-{}".format(n)
+        pship[key] = pid
+        partnerships.append({"id": pid, "fromId": ps_id[a], "toId": ps_id[b], "type": typ})
+        return pid
 
-    # Child links
-    cl_counter = 0
-    for mk, mu in units.items():
-        if mk not in pship_id_map:
-            continue
-        for cid in mu.child_ids:
-            if cid in id_map:
-                cl_counter += 1
-                child_links.append({
-                    "id": f"child-{cl_counter}",
-                    "partnershipId": pship_id_map[mk],
-                    "childId": id_map[cid],
-                    "branchYOffset": 0,
-                    "dashed": inds[cid].is_adopted,
-                })
-
-    # Twin links
-    tl_counter = 0
-    for tp in twins:
-        if tp.child1_id in id_map and tp.child2_id in id_map:
-            # Find the partnership for these twins
-            pship_id = ""
-            for mk, mu in units.items():
-                if tp.child1_id in mu.child_ids and tp.child2_id in mu.child_ids:
-                    pship_id = pship_id_map.get(mk, "")
-                    break
-            if pship_id:
-                tl_counter += 1
-                twin_links.append({
-                    "id": f"twin-{tl_counter}",
-                    "child1Id": id_map[tp.child1_id],
-                    "child2Id": id_map[tp.child2_id],
-                    "type": tp.type,
-                    "partnershipId": pship_id,
-                })
-
-    # Legend
-    for d_name, d_color in disease_colors.items():
-        any_has = any(d_name in ind.diseases for ind in inds.values())
-        if any_has:
-            legend_labels[d_color] = d_name
-
+    for (a, b), typ in partner_rels.items():
+        if a in ps_id and b in ps_id:
+            couple(a, b, typ)
+    for iid, ind in inds.items():
+        for (f, m), dashed in (((ind.father_id, ind.mother_id), False), (ind.adoptive, True)):
+            if f and m and f in ps_id and m in ps_id:
+                typ = "consanguineous" if (not dashed and is_consanguineous(inds, f, m)) else "normal"
+                pid = couple(f, m, partner_rels.get(tuple(sorted((f, m))), typ))
+                n += 1
+                child_links.append({"id": "child-{}".format(n), "partnershipId": pid, "childId": ps_id[iid],
+                                    "branchYOffset": 0, "dashed": dashed})
+    for a, b, what in couple_notes:
+        if a in ps_id and b in ps_id:
+            pid = couple(a, b)
+            n += 1
+            mid = "person-{}".format(len(persons) + 1)
+            ax, ay = inds[a].x, inds[a].y
+            persons.append({"id": mid, "shape": "no-offspring" if what == "no children" else "infertile",
+                            "x": round(ax + SHAPE_SIZE, 1), "y": round(ay + CHILD_HEIGHT, 1), "text": "",
+                            "deceased": False, "proband": False, "fillMode": "none", "fillColor": STROKE_COLOR,
+                            "quarters": [None] * 4, "halves": [None, None], "shadingPattern": "stripes",
+                            "shadingCoverage": "full", "centerText": "", "miscarriageSex": "unknown",
+                            "noSnap": False, "siblingFixed": False, "customLabel": "Lbl"})
+            child_links.append({"id": "child-{}".format(n), "partnershipId": pid, "childId": mid,
+                                "branchYOffset": 0, "dashed": False})
+    for a, b, typ in twins:
+        if a in ps_id and b in ps_id:
+            pid = ""
+            for cl in child_links:
+                if cl["childId"] == ps_id[a] and not cl["dashed"]:
+                    pid = cl["partnershipId"]
+            n += 1
+            twin_links.append({"id": "twin-{}".format(n), "child1Id": ps_id[a], "child2Id": ps_id[b],
+                               "type": typ, "partnershipId": pid})
+    legend = {colours[c]: c for c in conditions if any(c in ind.diseases for ind in inds.values())}
     return {
-        "version": 4,
-        "personIdCounter": pid_counter,
-        "labelIdCounter": 0,
-        "lineIdCounter": max(pship_counter, cl_counter, tl_counter) if any([pship_counter, cl_counter, tl_counter]) else 0,
-        "persons": persons, "labels": [],
-        "partnerships": partnerships, "childLinks": child_links,
-        "twinLinks": twin_links,
-        "legendLabels": legend_labels,
-        "legendVisible": bool(legend_labels),
-        "legendX": 50, "legendY": 80,
-        "zoom": 1, "panX": 0, "panY": 0,
-        "numberingMode": "numbers",
-        "partnerGapMultiplier": 2, "childHeightMultiplier": 2.5,
+        "version": 5, "personIdCounter": len(persons), "labelIdCounter": 0, "lineIdCounter": n,
+        "persons": persons, "labels": [], "partnerships": partnerships, "childLinks": child_links,
+        "twinLinks": twin_links, "legendLabels": legend, "legendVisible": bool(legend),
+        "legendX": 50, "legendY": 80, "zoom": 1, "panX": 0, "panY": 0, "numberingMode": "numbers",
+        "partnerGapMultiplier": 2, "childHeightMultiplier": 2.5, "drawStrokes": [],
     }
 
-
-# ── Public API ────────────────────────────────────────────────────────────
 
 @dataclass
 class ConversionResult:
     session: dict
     summary: str
+    warnings: List[str] = field(default_factory=list)
 
 
-def convert(
-    ga4gh_data: Optional[dict] = None,
-    phenopackets_data: Optional[dict] = None,
-) -> ConversionResult:
-    """Convert GA4GH Pedigree and/or Phenopackets Family to a Pedigree Studio session.
+class LegacyFileError(ValueError):
+    """The file is in one of the older, non-standard forms and must be upgraded first."""
 
-    Parameters
-    ----------
-    ga4gh_data : dict, optional
-        Parsed GA4GH Pedigree Standard JSON.
-    phenopackets_data : dict, optional
-        Parsed Phenopackets Family JSON.
 
-    At least one must be provided. If both are provided, GA4GH is used for
-    structure and Phenopackets enriches with disease labels.
+def kindred_to_session(k: Kindred) -> Tuple[dict, List[str]]:
+    warnings: List[str] = []
+    inds, couple_notes = kindred_to_individuals(k, warnings)
+    _placeholders(inds, warnings)
+    partner_rels: Dict[Tuple[str, str], str] = {}
+    twins = []
+    for r in k.relations:
+        if r.kin in _PARTNER:
+            partner_rels[tuple(sorted((r.individual, r.relative)))] = _PARTNER[r.kin]
+        elif r.kin in _TWINS:
+            twins.append((r.individual, r.relative, _TWINS[r.kin]))
+    # layout: draw adopted children under the adoptive couple when no biological parents are known
+    layout_inds = {iid: ind for iid, ind in inds.items()}
+    saved = {}
+    for iid, ind in inds.items():
+        if not (ind.father_id and ind.mother_id) and all(ind.adoptive):
+            saved[iid] = (ind.father_id, ind.mother_id)
+            ind.father_id, ind.mother_id = ind.adoptive
+    units = build_mating_units(layout_inds)
+    num_gens = assign_generations(layout_inds)
+    compute_layout(layout_inds, units, num_gens)
+    for iid, (f, m) in saved.items():
+        inds[iid].father_id, inds[iid].mother_id = f, m
+    conditions = []
+    for ind in inds.values():
+        for d in ind.diseases:
+            if d not in conditions:
+                conditions.append(d)
+    session = build_session(inds, couple_notes, partner_rels, twins, conditions)
+    return session, warnings
+
+
+def convert(ga4gh_data: Optional[dict] = None, phenopackets_data: Optional[dict] = None) -> ConversionResult:
+    """Draw a GA4GH Pedigree or a Phenopackets Family as a Pedigree Studio session.
+
+    Give either document. If both are given (as version 0.3 needed), the GA4GH
+    Pedigree is used: it already holds everything the Family does.
     """
-    if not ga4gh_data and not phenopackets_data:
-        return ConversionResult(session={}, summary="No input provided.")
-
-    ga4gh_inds, ga4gh_twins = None, None
-    pp_inds, pp_diseases = None, None
-
-    if ga4gh_data:
-        ga4gh_inds, ga4gh_twins = parse_ga4gh(ga4gh_data)
-    if phenopackets_data:
-        pp_inds, pp_diseases = parse_phenopackets(phenopackets_data)
-
-    inds, twins, diseases = merge_inputs(ga4gh_inds, ga4gh_twins, pp_inds, pp_diseases)
-
-    if not inds:
-        return ConversionResult(session={}, summary="No individuals found in input.")
-
-    units = build_mating_units(inds)
-    num_gens = assign_generations(inds)
-    compute_layout(inds, units, num_gens)
-
-    consang = any(is_consanguineous(inds, mu.father_id, mu.mother_id)
-                  for mu in units.values()
-                  if mu.father_id in inds and mu.mother_id in inds)
-
-    session = build_session(inds, units, twins, diseases, consang)
-
-    sources = []
-    if ga4gh_data:
-        sources.append("GA4GH Pedigree")
-    if phenopackets_data:
-        sources.append("Phenopackets Family")
-
-    summary = (
-        f"Converted from {' + '.join(sources)}. "
-        f"{len(inds)} individuals, {len(units)} partnerships, "
-        f"{len(twins)} twin pairs. "
-        f"Diseases: {', '.join(diseases) if diseases else 'none'}."
-    )
-
-    return ConversionResult(session=session, summary=summary)
+    doc = ga4gh_data or phenopackets_data
+    if not doc:
+        return ConversionResult(session={}, summary="Nothing to convert.")
+    for d in (ga4gh_data, phenopackets_data):
+        if d is not None:
+            old = identify_legacy(d)
+            if old is not None and not old.upgradable:
+                raise LegacyFileError(old.description)
+            if old is not None:
+                raise LegacyFileError(old.description + " Upgrade it first: pedigree-ga4gh upgrade FILE "
+                                      "(in the Pedigree workbench: Tools > Upgrade a file from an older tool).")
+    k, warnings = from_document(doc)
+    if ga4gh_data and phenopackets_data:
+        warnings.append("both files were given; the GA4GH Pedigree was used, as it holds everything the "
+                        "Family does")
+    session, w = kindred_to_session(k)
+    warnings.extend(w)
+    n_people = sum(1 for p in session["persons"] if p["shape"] not in ("no-offspring", "infertile"))
+    summary = "{} people, {} couples, {} twin pairs. Conditions: {}.".format(
+        n_people, len(session["partnerships"]), len(session["twinLinks"]),
+        ", ".join(session["legendLabels"].values()) or "none")
+    return ConversionResult(session=session, summary=summary, warnings=warnings)
 
 
-def convert_file(
-    ga4gh_path: Optional[str] = None,
-    phenopackets_path: Optional[str] = None,
-    output_path: str = "pedigree_session.json",
-) -> ConversionResult:
-    """Read GA4GH and/or Phenopackets files and write a Pedigree Studio session.
-
-    At least one input path must be provided.
-    """
-    ga4gh_data = None
-    pp_data = None
-
-    if ga4gh_path:
-        with open(ga4gh_path) as f:
-            ga4gh_data = json.load(f)
-    if phenopackets_path:
-        with open(phenopackets_path) as f:
-            pp_data = json.load(f)
-
-    result = convert(ga4gh_data, pp_data)
-
+def convert_file(ga4gh_path: Optional[str] = None, phenopackets_path: Optional[str] = None,
+                 output_path: str = "pedigree_session.json") -> ConversionResult:
+    def read(path):
+        with open(path, encoding="utf-8-sig") as fh:
+            return loads(fh.read())
+    result = convert(read(ga4gh_path) if ga4gh_path else None,
+                     read(phenopackets_path) if phenopackets_path else None)
     if result.session:
-        with open(output_path, "w") as f:
-            json.dump(result.session, f, indent=2)
-
+        with open(output_path, "w", encoding="utf-8") as fh:
+            json.dump(result.session, fh, indent=2)
+            fh.write("\n")
     return result
