@@ -49,6 +49,55 @@ def test_twins_and_couples_are_drawn():
     assert any(c.get("dashed") for c in s["childLinks"])          # the adopted child
 
 
+def _features(change=None):
+    """The features family's GA4GH Pedigree, changed by change(document) before it is drawn."""
+    with open(os.path.join(DATA, "features_ga4gh-pedigree.json"), encoding="utf-8") as fh:
+        doc = json.load(fh)
+    if change:
+        change(doc)
+    return ga4gh2studio.convert(loads(json.dumps(doc)))
+
+
+def _relabel(old, new_id, new_label):
+    def change(doc):
+        hits = [x for x in doc["relationships"] if x["relation"]["label"] == old]
+        assert len(hits) == 1
+        hits[0]["relation"] = {"id": new_id, "label": new_label}
+    return change
+
+
+def test_a_gestational_carrier_is_drawn_with_g():
+    """The 2025 correction to the nomenclature marks a gestational carrier G; S is no longer drawn."""
+    s = _features().session
+    marks = Counter(p["centerText"] for p in s["persons"] if p["centerText"])
+    assert marks["G"] == 1 and marks["S"] == 0 and marks["D"] == 1
+
+
+def test_a_surrogate_who_gave_the_egg_is_drawn_as_a_donor():
+    """A surrogate (KIN:006) gave the egg as well as carrying the pregnancy, so she is a genetic mother: D, as
+    the corrected nomenclature has it, with a warning that the drawing does not show that she carried it."""
+    r = _features(_relabel("isGestationalCarrierOf", "KIN:006", "isSurrogateOvumDonorOf"))
+    marks = Counter(p["centerText"] for p in r.session["persons"] if p["centerText"])
+    assert marks["D"] == 2 and marks["G"] == 0 and marks["S"] == 0
+    assert any("II-3 gave the egg for III-1" in w for w in r.warnings)
+
+
+def test_twins_of_unknown_zygosity():
+    """isMultipleBirthSiblingOf (KIN:009) says nothing of zygosity: the Studio's twins of unknown zygosity."""
+    r = _features(_relabel("isPolyzygoticMultipleBirthSiblingOf", "KIN:009", "isMultipleBirthSiblingOf"))
+    assert Counter(t["type"] for t in r.session["twinLinks"]) == Counter({"identical": 1, "unknown": 1})
+
+
+def test_a_consultand_in_the_narrative_gets_the_arrow():
+    """studio2ga4gh notes a consultand in the narrative; drawn again, they get the consultand's arrow."""
+    def note(doc):
+        doc["narrative"] += " II-5 is a consultand."
+    r = _features(note)
+    flagged = [p for p in r.session["persons"] if p.get("consultand")]
+    assert len(flagged) == 1 and not flagged[0]["proband"]
+    assert not any(p.get("consultand") for p in _features().session["persons"])
+
+
 def test_round_trip_ga4gh_studio_ga4gh():
     """Drawn again by studio2ga4gh, every example gives the same family: the same people, relationships,
     terms and index patient (people are compared by sex, since their ids are numbered afresh)."""

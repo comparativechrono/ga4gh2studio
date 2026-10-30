@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ga4gh2studio"
-version = "0.4.0"
+version = "0.4.1"
 description = "Draw GA4GH Pedigree and Phenopackets Family files in Pedigree Studio"
 readme = "README.md"
 license = "MIT"
@@ -26,7 +26,7 @@ dependencies = ["pedigree-ga4gh>=1.0,<2"]
 
 [project.optional-dependencies]
 # studio2ga4gh is needed only by the round-trip test, which draws each file and converts it back
-test = ["pytest>=7", "studio2ga4gh>=0.4"]
+test = ["pytest>=7", "studio2ga4gh>=0.4.1"]
 
 [project.scripts]
 ga4gh2studio = "ga4gh2studio.cli:main"

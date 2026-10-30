@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.4.1
+
+For the 2025 correction to the pedigree nomenclature (Steinhaus French,
+Bennett and Resta, *J Genet Couns* 2025;34(2):e2020), which Pedigree Studio
+now draws:
+
+- A gestational carrier (`KIN:005`) drawn in the mother's place gets G in her
+  symbol, not S, which the correction removes.
+- A surrogate who gave the egg (`isSurrogateOvumDonorOf`, `KIN:006`) gets D,
+  as an egg donor, with a warning that the drawing does not show that she
+  carried the pregnancy. 0.4.0 gave her S, which the Studio's other tools
+  read as a gestational carrier who is not a genetic parent, so a round trip
+  lost the fact that she is the child's genetic mother.
+- Twins related by `isMultipleBirthSiblingOf` (`KIN:009`), which says nothing
+  of zygosity, are drawn as twins of unknown zygosity (the Studio's "?"), not
+  as non-identical twins.
+- A consultand that studio2ga4gh 0.4.1 notes in the narrative gets the
+  consultand's arrow.
+
+Drawings with G need studio2ga4gh 0.4.1 to be read back (0.4.0 reads G as a
+biological mother), so the round-trip test now needs it, and it should be
+released first.
+
 ## 0.4.0
 
 ga4gh2studio now reads GA4GH files through
