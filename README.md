@@ -48,14 +48,22 @@ family out simply, and Tidy arranges it properly.
 |---|---|
 | biological mother and father (`KIN:027`, `KIN:028`, `KIN:003`) | a couple with a solid line to the child |
 | sperm or egg donor (`KIN:004`, `KIN:038`) | a parent with D in the symbol |
-| gestational carrier (`KIN:005`) with no genetic mother recorded | drawn in the mother's place, with S in the symbol |
+| surrogate who gave the egg (`KIN:006`) | the mother, with D in the symbol, and a warning that the drawing does not show that she carried the pregnancy |
+| gestational carrier (`KIN:005`) with no genetic mother recorded | drawn in the mother's place, with G in the symbol |
 | adoptive or foster parent (`KIN:022`, `KIN:021`) | a dashed line, and the child's symbol in brackets |
-| identical or non-identical twins (`KIN:010`, `KIN:011`, `KIN:009`) | the matching twin line |
+| identical or non-identical twins (`KIN:010`, `KIN:011`) | the matching twin line |
+| twins of unknown zygosity (`KIN:009`) | the twin line marked ? |
 | partners, consanguineous or separated partners | the matching partnership line |
-| `indexPatients`, or the Family's proband | the proband arrow |
+| `indexPatients`, or the Family's proband | the proband's arrow, with its P |
+| a consultand, in the narrative | the consultand's arrow |
 | vital status `DECEASED` | the slash |
 | diseases and phenotypic features | colours named in the colour key, with their term: `breast cancer [MONDO:0007254]` |
 | carriers, pregnancies and the like, in the narrative | the matching marks |
+
+The marks follow the pedigree nomenclature as corrected in 2025 (Steinhaus
+French, Bennett and Resta, *J Genet Couns* 2025;34(2):e2020), which Pedigree
+Studio draws: G for a gestational carrier, where drawings made before used S,
+and D for a surrogate, who gives the egg and so is a genetic mother.
 
 The ontology id written in the colour key is what lets studio2ga4gh give the
 condition the same term when the drawing is converted back.
