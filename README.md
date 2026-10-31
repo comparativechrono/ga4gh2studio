@@ -51,13 +51,13 @@ family out simply, and Tidy arranges it properly.
 | surrogate who gave the egg (`KIN:006`) | the mother, with D in the symbol, and a warning that the drawing does not show that she carried the pregnancy |
 | gestational carrier (`KIN:005`) with no genetic mother recorded | drawn in the mother's place, with G in the symbol |
 | adoptive or foster parent (`KIN:022`, `KIN:021`) | a dashed line, and the child's symbol in brackets |
-| identical or non-identical twins (`KIN:010`, `KIN:011`) | the matching twin line |
+| identical or non-identical twins (`KIN:010`, `KIN:011`) | the matching twin line (triplets and more are drawn from one point) |
 | twins of unknown zygosity (`KIN:009`) | the twin line marked ? |
 | partners, consanguineous or separated partners | the matching partnership line |
 | `indexPatients`, or the Family's proband | the proband's arrow, with its P |
 | a consultand, in the narrative | the consultand's arrow |
 | vital status `DECEASED` | the slash |
-| diseases and phenotypic features | colours named in the colour key, with their term: `breast cancer [MONDO:0007254]` |
+| diseases and phenotypic features | colours named in the colour key, with their term: `breast cancer [MONDO:0007254]`; two, three or four divide the symbol into halves, thirds or quarters |
 | carriers, pregnancies and the like, in the narrative | the matching marks |
 
 The marks follow the pedigree nomenclature as corrected in 2025 (Steinhaus

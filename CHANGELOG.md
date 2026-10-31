@@ -18,6 +18,10 @@ now draws:
   as non-identical twins.
 - A consultand that studio2ga4gh 0.4.1 notes in the narrative gets the
   consultand's arrow.
+- Someone with three conditions is drawn in thirds, which Pedigree Studio now
+  draws, as the nomenclature does; 0.4.0 drew them in quarters with one left
+  empty. Four or more still give quarters (the first four conditions).
+  Pedigree Studio versions from before thirds draw such a symbol unshaded.
 
 Drawings with G need studio2ga4gh 0.4.1 to be read back (0.4.0 reads G as a
 biological mother), so the round-trip test now needs it, and it should be
