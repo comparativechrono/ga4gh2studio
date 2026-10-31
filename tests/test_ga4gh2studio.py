@@ -98,6 +98,21 @@ def test_a_consultand_in_the_narrative_gets_the_arrow():
     assert not any(p.get("consultand") for p in _features().session["persons"])
 
 
+def test_three_conditions_divide_the_symbol_into_thirds():
+    """One condition fills the symbol; two, three or four divide it into halves, thirds or quarters, as the
+    nomenclature does (Bennett et al. 2022)."""
+    terms = [{"term": {"id": "MONDO:00000%02d" % i, "label": "Condition %d" % i}} for i in range(1, 5)]
+
+    def give(n):
+        def change(doc):
+            [i for i in doc["individuals"] if i["subject"]["id"] == "II-1"][0]["diseases"] = terms[:n]
+        return change
+    for n, mode, part in ((2, "half", "halves"), (3, "thirds", "thirds"), (4, "quartered", "quarters")):
+        s = _features(give(n)).session
+        p = [q for q in s["persons"] if q["fillMode"] == mode and sum(1 for c in q[part] if c) == n]
+        assert len(p) == 1, (n, mode)
+
+
 def test_round_trip_ga4gh_studio_ga4gh():
     """Drawn again by studio2ga4gh, every example gives the same family: the same people, relationships,
     terms and index patient (people are compared by sex, since their ids are numbered afresh)."""
